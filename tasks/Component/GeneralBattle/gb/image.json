@@ -21,7 +21,7 @@
     "itemName": "prepare_highlight",
     "imageName": "gb_prepare_highlight.png",
     "roiFront": "1128,536,100,100",
-    "roiBack": "1128,536,100,100",
+    "roiBack": "1110,500,169,200",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "准备"
@@ -223,5 +223,32 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "绿标"
+  },
+  {
+    "itemName": "green_marker_left_top",
+    "imageName": "gb_green_marker_left_top.png",
+    "roiFront": "0,0,1280,720",
+    "roiBack": "0,0,1280,720",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "绿标-左上角部分"
+  },
+  {
+    "itemName": "green_marker_bottom",
+    "imageName": "gb_green_marker_bottom.png",
+    "roiFront": "0,0,1280,720",
+    "roiBack": "0,0,1280,720",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "绿标-下半部分"
+  },
+  {
+    "itemName": "preset_wit_number",
+    "imageName": "gb_preset_wit_number.png",
+    "roiFront": "40,655,37,37",
+    "roiBack": "9,636,100,74",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "新版本的预设图案带数字"
   }
 ]

@@ -14,13 +14,13 @@ from module.logger import logger
 
 class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
 
-    def run_battle(self, battle_config: BattleConfig) -> bool:
+    def run_battle(self, battle_config: BattleConfig, limit_count: int = None) -> bool:
         """
         :return: 如果结契成功返回True，否则返回False
         """
         logger.hr("General battle start", 2)
         self.current_count += 1
-        logger.info(f"Current count: {self.current_count}")
+        logger.info(f"Current count: {self.current_count} / " + str(limit_count))
 
         if self.check_load():
             # 首先要判断进入战斗的界面
@@ -67,6 +67,8 @@ class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
             # 如果领奖励
             if self.appear(self.I_REWARD, threshold=0.6):
                 break
+            if self.appear(self.I_WIN, threshold=0.6):
+                break
             # 如果开启战斗过程随机滑动
             if random_click_swipt_enable:
                 self.random_click_swipt()
@@ -82,6 +84,8 @@ class BondlingBattle(GeneralBattle, BondlingFairylandAssets):
             action_click = random.choice([self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3])
             if self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5):
                 continue
+            if self.appear_then_click(self.I_WIN, threshold=0.6):
+                break
             if not self.appear(self.I_REWARD):
                 break
         logger.info("Get reward")

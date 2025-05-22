@@ -46,6 +46,8 @@ from tasks.RealmRaid.config import RealmRaid
 from tasks.CollectiveMissions.config import CollectiveMissions
 from tasks.Hunt.config import Hunt
 from tasks.AbyssShadows.config import AbyssShadows
+from tasks.GuildBanquet.config import GuildBanquet
+from tasks.DemonRetreat.config import DemonRetreat
 
 # 这一部分是活动的配置-----------------------------------------------------------------------------------------------------
 from tasks.ActivityShikigami.config import ActivityShikigami
@@ -53,6 +55,8 @@ from tasks.MetaDemon.config import MetaDemon
 from tasks.FrogBoss.config import FrogBoss
 from tasks.FloatParade.config import FloatParade
 from tasks.Quiz.config import Quiz
+from tasks.KittyShop.config import KittyShop
+from tasks.DyeTrials.config import DyeTrials
 # ----------------------------------------------------------------------------------------------------------------------
 
 # 肝帝专属---------------------------------------------------------------------------------------------------------------
@@ -113,6 +117,8 @@ class ConfigModel(ConfigBase):
     frog_boss: FrogBoss = Field(default_factory=FrogBoss)
     float_parade: FloatParade = Field(default_factory=FloatParade)
     quiz: Quiz = Field(default_factory=Quiz)
+    kitty_shop: KittyShop = Field(default_factory=KittyShop)
+    dye_trials: DyeTrials = Field(default_factory=DyeTrials)
 
     # 这些是肝帝专属
     bondling_fairyland: BondlingFairyland = Field(default_factory=BondlingFairyland)
@@ -135,7 +141,8 @@ class ConfigModel(ConfigBase):
     hunt: Hunt = Field(default_factory=Hunt)
     dokan: Dokan = Field(default_factory=Dokan)
     abyss_shadows: AbyssShadows = Field(default_factory=AbyssShadows)
-
+    guild_banquet: GuildBanquet = Field(default_factory=GuildBanquet)
+    demon_retreat: DemonRetreat = Field(default_factory=DemonRetreat)
 
     def __init__(self, config_name: str=None) -> None:
         """
@@ -305,6 +312,10 @@ class ConfigModel(ConfigBase):
             # 将 groups的参数，同导出的json一起合并, 用于前端显示
             result = []
             for key, value in groups["properties"].items():
+                # deal with exclude 
+                if key in jsons and jsons[key] == 0xABCDEF:
+                    continue
+
                 item = {}
                 item["name"] = key
                 item["title"] = value["title"] if "title" in value else inflection.underscore(key)
@@ -327,7 +338,7 @@ class ConfigModel(ConfigBase):
         groups_value = groups.copy()
 
         result: dict[str, list] = {}
-        for key, value in task.model_dump().items():
+        for key, value in task.model_dump(context={'hide': True}).items():
             if key not in groups:
                 for group_name in groups.keys():
                     if group_name in key:
@@ -433,4 +444,5 @@ if __name__ == "__main__":
         print(e)
         c = ConfigModel()
 
-    c.script_set_arg('Duel', 'test_list_2', 'switch_all_soul', 'false')
+    print(c.script_task('GuildBanquet'))
+

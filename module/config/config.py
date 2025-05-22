@@ -26,9 +26,6 @@ from module.exception import RequestHumanTakeover, ScriptError
 from module.logger import logger
 
 
-
-
-
 class Function:
     def __init__(self, key: str, data: dict):
         """
@@ -258,8 +255,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         data = {"running": running, "pending": pending, "waiting": waiting}
         return data
 
-
-    def task_call(self, task: str=None, force_call=True):
+    def task_call(self, task: str = None, force_call=True):
         """
         回调任务，这会是在任务结束后调用
         :param task: 调用的任务的大写名称
@@ -284,7 +280,7 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
             return False
 
     def task_delay(self, task: str, start_time: datetime = None,
-                   success: bool=None, server: bool=True, target: datetime=None) -> None:
+                   success: bool = None, server: bool = True, target: datetime = None) -> None:
         """
         设置下次运行时间  当然这个也是可以重写的
         :param target: 可以自定义的下次运行时间
@@ -294,11 +290,6 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         :param finish: 是完成任务后的时间为基准还是开始任务的时间为基准
         :return:
         """
-        # 获取真蛇成功次数
-        global current_success, true_orochi_config
-        if task == 'TrueOrochi':
-            current_success = self.model.true_orochi.true_orochi_config.current_success
-
         # 加载配置文件
         self.reload()
         # 任务预处理
@@ -375,9 +366,6 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         self.lock_config.acquire()
         try:
             scheduler.next_run = next_run
-            if task == 'true_orochi':
-                true_orochi_config = getattr(task_object, 'true_orochi_config', None)
-                true_orochi_config.current_success = current_success
             self.save()
         finally:
             self.lock_config.release()
@@ -385,14 +373,8 @@ class Config(ConfigState, ConfigManual, ConfigWatcher, ConfigMenu):
         logger.attr(f'{task}.scheduler.next_run', next_run)
 
 
-
-
 if __name__ == '__main__':
     config = Config(config_name='oas1')
     config.notifier.push(title="0000", content="dddddddd")
 
     # print(config.get_next())
-
-
-
-

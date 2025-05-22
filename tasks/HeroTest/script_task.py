@@ -53,12 +53,16 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
+
         # 启动经验加成
-        if is_update:
+        exp_50_buff_enable = config.herotest.exp_50_buff_enable_help
+        exp_100_buff_enable = config.herotest.exp_100_buff_enable_help
+        if exp_50_buff_enable or exp_100_buff_enable:
             self.open_buff()
-            self.exp_100(True)
-            self.exp_50(True)
+            self.exp_100(exp_100_buff_enable)
+            self.exp_50(exp_50_buff_enable)
             self.close_buff()
+
         self.ui_goto(page_exploration)
         self.home_main()
         # 设定是否锁定阵容
@@ -189,7 +193,8 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
             self.screenshot()
             if win:
                 # 点击赢了
-                action_click = random.choice([self.C_WIN_1, self.C_WIN_2, self.C_WIN_3])
+                # self.C_WIN_2 在掉落物品过多的时候可能会点击到物品，导致脚本卡死
+                action_click = random.choice([self.C_WIN_1, self.C_WIN_3])
                 if self.appear_then_click(
                     self.I_WIN, action=action_click, interval=0.5
                 ):
@@ -232,8 +237,9 @@ class ScriptTask(GameUi, BaseActivity, HeroTestAssets, SwitchSoul):
         while 1:
             self.screenshot()
             # 如果出现领奖励
+            # self.C_REWARD_2 在掉落物品过多的时候可能会点击到物品，导致脚本卡死
             action_click = random.choice(
-                [self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3]
+                [self.C_REWARD_1, self.C_REWARD_3]
             )
             if self.appear_then_click(
                 self.I_REWARD, action=action_click, interval=1.5
@@ -321,7 +327,7 @@ if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
 
-    c = Config("oas2")
+    c = Config("oas1")
     d = Device(c)
     t = ScriptTask(c, d)
 

@@ -209,8 +209,8 @@
   {
     "itemName": "ryou_dokan_win",
     "imageName": "res_ryou_dokan_win.png",
-    "roiFront": "628,60,45,33",
-    "roiBack": "628,60,45,33",
+    "roiFront": "620,50,100,80",
+    "roiBack": "620,50,100,80",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "状态：道馆胜利"
@@ -511,5 +511,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "左上角退出按钮-"
+  },
+  {
+    "itemName": "ryou_dokan_spoils_of_dokan",
+    "imageName": "res_ryou_dokan_spoils_of_dokan.png",
+    "roiFront": "480,400,400,100",
+    "roiBack":  "480,400,400,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "道馆攻破后夺得资金界面"
   }
 ]

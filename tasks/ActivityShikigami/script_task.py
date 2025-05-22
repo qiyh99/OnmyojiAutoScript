@@ -44,6 +44,11 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
 
         self.ui_get_current_page()
         self.ui_goto(page_main)
+
+        # self.open_buff()
+        # self.soul(is_open=True)
+        # self.close_buff()
+
         self.home_main()
 
         # 选择是游戏的体力还是活动的体力
@@ -51,6 +56,7 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
         self.switch(current_ap)
 
         # 设定是否锁定阵容
+
         if config.general_battle.lock_team_enable:
             logger.info("Lock team")
             while 1:
@@ -122,6 +128,9 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
                 logger.info("General battle success")
 
         self.main_home()
+        self.open_buff()
+        self.soul(is_open=False)
+        self.close_buff()
         if config.general_climb.active_souls_clean:
             self.set_next_run(task='SoulsTidy', success=False, finish=False, target=datetime.now())
         self.set_next_run(task="ActivityShikigami", success=True)
@@ -138,20 +147,9 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
             self.screenshot()
             if self.appear(self.I_FIRE):
                 break
-            # 2024-12-04 --------------start
-            from tasks.ActivityShikigami.config import ShikigamiType
-            map_click = {
-                ShikigamiType.FOOD_TYPE_1: self.C_CLICK1,
-                ShikigamiType.FOOD_TYPE_2: self.C_CLICK2,
-                ShikigamiType.FOOD_TYPE_3: self.C_CLICK3,
-                ShikigamiType.FOOD_TYPE_4: self.C_CLICK4,
-            }
-            self.click(map_click[self.config.model.activity_shikigami.shikigami.food_type], interval=4)
-            # 2024-12-04 --------------end
             if self.appear_then_click(self.I_SHI, interval=1):
                 continue
-            if self.appear_then_click(self.I_DRUM, interval=1):
-                continue
+
             if self.appear_then_click(self.I_BATTLE, interval=1):
                 continue
 
@@ -179,22 +177,34 @@ class ScriptTask(GameUi, BaseActivity, SwitchSoul, ActivityShikigamiAssets):
         """
         self.screenshot()
         if current_ap == ApMode.AP_ACTIVITY:
-            cu, res, total = self.O_REMAIN_AP_ACTIVITY.ocr(image=self.device.image)
-            if cu == 0 and cu + res == total:
-                logger.warning("Activity ap not enough")
+            res: int = self.O_REMAIN_AP_ACTIVITY2.ocr_digit(self.device.image)
+            if res <= 0:
+                logger.warning(f'Activity ap {res} not enough')
                 return False
             return True
+            # cu, res, total = self.O_REMAIN_AP_ACTIVITY.ocr(image=self.device.image)
+            # if cu == 0 and cu + res == total:
+            #     logger.warning("Activity ap not enough")
+            #     return False
+            # return True
 
         elif current_ap == ApMode.AP_GAME:
-            cu, res, total = self.O_REMAIN_AP.ocr(image=self.device.image)
-            if cu == total and cu + res == total:
-                if cu > total:
-                    logger.warning(f'Game ap {cu} more than total {total}')
-                    return True
-                logger.warning(f'Game ap not enough: {cu}')
-                return False
+            cu: int = self.O_REMAIN_AP.ocr_digit(self.device.image)
+            if cu > 0:
+                logger.warning(f'Game ap {cu} more than 0')
+                return True
+            logger.warning(f'Game ap not enough: {cu}')
+            return False
 
-            return True
+            # cu, res, total = self.O_REMAIN_AP.ocr(image=self.device.image)
+            # if cu == total and cu + res == total:
+            #     if cu > total:
+            #         logger.warning(f'Game ap {cu} more than total {total}')
+            #         return True
+            #     logger.warning(f'Game ap not enough: {cu}')
+            #     return False
+            #
+            # return True
 
     def switch(self, current_ap: ApMode) -> None:
         """
