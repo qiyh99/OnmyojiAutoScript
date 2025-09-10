@@ -46,11 +46,17 @@ class DemonEncounterAssets:
 	I_BOSS_KILLED = RuleImage(roi_front=(654,596,35,68), roi_back=(614,537,123,176), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/boss/boss_boss_killed.png")
 	# 极逢魔集结挑战 
 	I_BEST_BOSS_FIRE = RuleImage(roi_front=(1087,562,100,36), roi_back=(1087,562,100,36), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/boss/boss_best_boss_fire.png")
+	# 战斗失败-等待界面 
+	I_BOSS_WAIT = RuleImage(roi_front=(490,50,350,150), roi_back=(490,50,350,150), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/boss/boss_boss_wait.png")
+	# 战斗结束标识，左下角有战绩按钮 
+	I_BOSS_DONE_CHECK = RuleImage(roi_front=(0,450,100,130), roi_back=(0,450,100,130), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/boss/boss_boss_done_check.png")
 
 
 	# Ocr Rule Assets
 	# 人数 
 	O_DE_BOSS_PEOPLE = RuleOcr(roi=(880,591,100,35), area=(880,591,100,35), mode="DigitCounter", method="Default", keyword="", name="de_boss_people")
+	# Ocr-description 
+	O_DE_BEST_BOSS_PEOPLE = RuleOcr(roi=(902,564,100,31), area=(902,564,100,31), mode="DigitCounter", method="Default", keyword="", name="de_best_boss_people")
 
 
 	# Click Rule Assets
@@ -78,9 +84,11 @@ class DemonEncounterAssets:
 	# 左下角小指针 
 	I_DE_LOCATION = RuleImage(roi_front=(26,653,44,47), roi_back=(26,653,44,47), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/demon_de_location.png")
 	# 逢魔蓝票 
-	I_BLUE_PIAO = RuleImage(roi_front=(420,226,444,262), roi_back=(420,226,444,262), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/blue_piao.png")
+	I_MYSTERY_AMULET = RuleImage(roi_front=(596,314,84,82), roi_back=(581,294,115,116), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/demon_mystery_amulet.png")
+	# 逢魔体力 
+	I_SUSHI = RuleImage(roi_front=(602,318,72,54), roi_back=(581,294,115,116), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/demon_sushi.png")
 	# 50勾玉购买 
-	I_JADE_50 = RuleImage(roi_front=(420,226,444,262), roi_back=(420,226,444,262), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/jade_50.png")
+	I_JADE_50 = RuleImage(roi_front=(593,425,84,46), roi_back=(548,405,182,83), threshold=0.8, method="Template matching", file="./tasks/DemonEncounter/demon/demon_jade_50.png")
 
 
 	# Image Rule Assets

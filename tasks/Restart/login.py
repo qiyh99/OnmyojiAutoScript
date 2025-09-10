@@ -7,7 +7,7 @@ from module.exception import RequestHumanTakeover, GameTooManyClickError, GameSt
 from module.logger import logger
 from tasks.Restart.assets import RestartAssets
 from tasks.base_task import BaseTask
-
+import time
 
 class LoginHandler(BaseTask, RestartAssets):
     character: str
@@ -111,12 +111,23 @@ class LoginHandler(BaseTask, RestartAssets):
             if self.appear(self.I_CREATE_ACCOUNT):
                 logger.warning('Appear create account')
                 raise GameStuckError('Appear create account')
+
+            # 点击“进入游戏”速度过快会进入区服设置，同时需在检测I_LOGIN_8之前检测，因为新服图标会让I_LOGIN_8向右偏移导致永远无法检测成功
+            # 同时修复了点击位置（之前是点击I_CHARACTARS而不是左边的区域）
+            if self.appear(self.I_CHARACTARS, interval=1):
+                logger.info('误入区服设置')
+                # https://github.com/runhey/OnmyojiAutoScript/issues/585
+                self.device.click(x=106, y=535)
+                
             # 点击’进入游戏‘
             if not self.appear(self.I_LOGIN_8):
                 continue
-            if self.appear(self.I_CHARACTARS, interval=1):
-                # https://github.com/runhey/OnmyojiAutoScript/issues/585
-                self.device.click(x=246, y=535)
+            
+            # 登录体验服时，点击“进入游戏”速度过快，可能会出现体验服的弹窗
+            if self.appear(self.I_EARLY_SERVER):
+                if self.appear_then_click(self.I_EARLY_SERVER_CANCEL):
+                    logger.info('Cancel switch from early server to normal server')
+                    continue
             if self.ocr_appear_click(self.O_LOGIN_ENTER_GAME, interval=3):
                 self.wait_until_appear(self.I_LOGIN_SPECIFIC_SERVE, True, wait_time=5)
                 continue
@@ -148,7 +159,7 @@ class LoginHandler(BaseTask, RestartAssets):
         :return: 如果没有发现任何奖励后退出
         """
         logger.hr('Harvest')
-        timer_harvest = Timer(5)  # 如果连续3秒没有发现任何奖励，退出
+        timer_harvest = Timer(5)  # 如果连续5秒没有发现任何奖励，退出
         while 1:
             self.screenshot()
 
@@ -249,8 +260,13 @@ class LoginHandler(BaseTask, RestartAssets):
                     self.wait_until_appear(self.I_HARVEST_MAIL_CONFIRM, wait_time=1)
                     timer_harvest.reset()
                     continue
-                if self.appear(self.I_HARVEST_MAIL_OPEN, threshold=0.9):
+                # threshold如果是0.9，可能会导致有邮件但无法识别永久卡住
+                if self.appear(self.I_HARVEST_MAIL_OPEN, threshold=0.8):
                     self.click(self.I_HARVEST_MAIL_OPEN, interval=0.8)
+                    timer_harvest.reset()
+                    continue
+                if self.appear(self.I_HARVEST_MAIL_2):
+                    self.click(self.I_HARVEST_MAIL_2, interval=0.8)
                     timer_harvest.reset()
                     continue
                 if ((self.appear(self.I_HARVEST_MAIL) or self.appear(self.I_HARVEST_MAIL_COPY))
@@ -273,7 +289,7 @@ class LoginHandler(BaseTask, RestartAssets):
                 continue
             # 自选御魂
             if self.appear(self.I_HARVEST_SOUL_1):
-                logger.info('Select soul 1')
+                logger.info('Select soul 2')
                 self.ui_click(self.I_HARVEST_SOUL_1, stop=self.I_HARVEST_SOUL_2)
                 self.ui_click(self.I_HARVEST_SOUL_2, stop=self.I_HARVEST_SOUL_3, interval=3)
                 self.ui_click_until_disappear(click=self.I_HARVEST_SOUL_3)
@@ -285,7 +301,7 @@ class LoginHandler(BaseTask, RestartAssets):
                 timer_harvest.reset()
                 continue
 
-            # 三秒内没有发现任何奖励，退出
+            # 五秒内没有发现任何奖励，退出
             if not timer_harvest.started():
                 timer_harvest.start()
             else:

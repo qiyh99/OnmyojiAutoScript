@@ -223,10 +223,25 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
             self.screenshot()
             # 如果出现领奖励
             action_click = random.choice([self.C_REWARD_1, self.C_REWARD_2, self.C_REWARD_3])
-            if self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5) or \
-                    self.appear_then_click(self.I_REWARD_GOLD, action=action_click, interval=1.5):
+            if (self.appear_then_click(self.I_REWARD, action=action_click, interval=1.5) or
+                self.appear_then_click(self.I_REWARD_GOLD, action=action_click, interval=1.5)#  or
+                # self.appear_then_click(self.I_REWARD_STATISTICS, action=action_click, interval=1.5) or
+                # self.appear_then_click(self.I_REWARD_PURPLE_SNAKE_SKIN, action=action_click, interval=1.5) or
+                # self.appear_then_click(self.I_REWARD_GOLD_SNAKE_SKIN, action=action_click, interval=1.5) or
+                # self.appear_then_click(self.I_REWARD_EXP_SOUL_4, action=action_click, interval=1.5) or
+                # self.appear_then_click(self.I_REWARD_SOUL_5, action=action_click, interval=1.5) or
+                # self.appear_then_click(self.I_REWARD_SOUL_6, action=action_click, interval=1.5)
+                ):
                 continue
-            if not self.appear(self.I_REWARD) and not self.appear(self.I_REWARD_GOLD):
+            if (not self.appear(self.I_REWARD) and
+                not self.appear(self.I_REWARD_GOLD)#  and
+                # not self.appear(self.I_REWARD_STATISTICS) and
+                # not self.appear(self.I_REWARD_PURPLE_SNAKE_SKIN) and
+                # not self.appear(self.I_REWARD_GOLD_SNAKE_SKIN) and
+                # not self.appear(self.I_REWARD_EXP_SOUL_4) and
+                # not self.appear(self.I_REWARD_SOUL_5) and
+                # not self.appear(self.I_REWARD_SOUL_6)
+                ):
                 break
 
         return win
@@ -386,7 +401,7 @@ class GeneralBattle(GeneralBuff, GeneralBattleAssets):
                 case 2:
                     self.swipe(self.S_BATTLE_RANDOM_RIGHT, interval=20)
             # 重新设置为长战斗
-            self.device.stuck_record_add('BATTLE_STATUS_S')
+            # self.device.stuck_record_add('BATTLE_STATUS_S')
         else:
             time.sleep(0.4)  # 这样的好像不对
 

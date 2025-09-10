@@ -22,7 +22,7 @@ from tasks.Utils.config_enum import ShikigamiClass
 
 from module.logger import logger
 from module.base.timer import Timer
-from module.exception import RequestHumanTakeover, TaskEnd
+from module.exception import RequestHumanTakeover, TaskEnd, GameStuckError
 from module.atom.image_grid import ImageGrid
 from module.atom.animate import RuleAnimate
 from module.base.utils import load_image
@@ -151,8 +151,14 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
             self.device.click_record_clear()
             self.swipe(self.S_SWIPE_LEVEL_UP)
             swipeCount += 1
+            debug_info = f"Swiped {swipeCount} times, current exploration level: {text1}"
+            logger.info(debug_info)
             if swipeCount >= 25:
+                raise GameStuckError(
+                    f"Swiped too many times ({swipeCount}), seems stuck in exploration level selection"
+                )
                 return False
+            time.sleep(1)
 
         # 选中对应章节
         while 1:
@@ -323,6 +329,7 @@ class BaseExploration(GameUi, GeneralBattle, GeneralRoom, GeneralInvite, Replace
         next_run = datetime.now() + con_scrolls.scrolls_cd
         self.set_next_run(task='Exploration', success=False, finish=False, target=next_run)
         self.set_next_run(task='RealmRaid', success=False, finish=False, target=datetime.now())
+        self.set_next_run(task='MemoryScrolls', success=False, finish=False, target=datetime.now())
         raise TaskEnd
 
     #

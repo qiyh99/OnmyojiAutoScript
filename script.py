@@ -14,6 +14,8 @@ import inflection
 import asyncio
 import json
 
+from datetime import date
+import threading
 from typing import Callable
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -32,6 +34,11 @@ from module.base.decorator import del_cached_property
 from module.logger import logger
 from module.exception import *
 from module.server.i18n import I18n
+from module.device.platform2.platform_windows import minimize_by_name,show_window_by_name
+
+
+_log_switch_lock = threading.Lock()#线程锁
+
 
 class Script:
     def __init__(self, config_name: str ='oas') -> None:
@@ -308,7 +315,6 @@ class Script:
 
             if task.next_run > datetime.now():
                 logger.info(f'Wait until {task.next_run} for task `{task.command}`')
-                # self.is_first_task = False
                 method = self.config.script.optimization.when_task_queue_empty
                 if method == 'close_game':
                     logger.info('Close game during wait')
@@ -380,6 +386,8 @@ class Script:
             logger.critical('Game page unknown')
             self.save_error_log()
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GamePageUnknownError")
+            self.config.task_call('Restart')
+            self.device.sleep(10)
             return False
         except ScriptError as e:
             logger.critical(e)
@@ -402,10 +410,25 @@ class Script:
         Main loop of scheduler.
         :return:
         """
-        logger.set_file_logger(self.config_name)
+        with _log_switch_lock:
+            logger.set_file_logger(self.config_name, do_cleanup=True)
+        start_day = date.today()
         logger.info(f'Start scheduler loop: {self.config_name}')
 
+        # Update GUI 防呆, 读取设置并立刻显示后台模拟器到前台
+        if not self.config.script.device.run_background_only:
+            target_window_name = self.config.script.device.handle  # 在这里输入你的具体窗口名称
+            if self.config.script.device.emulator_window_minimize:
+                minimize_by_name(target_window_name)
+                logger.info(f'重新显示: {target_window_name}')
+            else:
+                show_window_by_name(target_window_name)
+                
         while 1:
+            if date.today() > start_day:
+                with _log_switch_lock:
+                    logger.set_file_logger(self.config_name, do_cleanup=True)
+                start_day = date.today()
             # Check update event from GUI
             # if self.stop_event is not None:
             #     if self.stop_event.is_set():
@@ -437,6 +460,8 @@ class Script:
                 continue
 
             # Run
+            if self.state_queue:
+                self.state_queue.put({"schedule": self.config.get_schedule_data()})
             logger.info(f'Scheduler: Start task `{task}`')
             self.device.stuck_record_clear()
             self.device.click_record_clear()
@@ -458,6 +483,13 @@ class Script:
                 logger.critical("Possible reason #2: There is a problem with this task. "
                                 "Please contact developers or try to fix it yourself.")
                 logger.critical('Request human takeover')
+                # 添加失败三次的推送通知
+                self.config.notifier.push(
+                    title=f'{I18n.trans_zh_cn(task)}{task}',
+                    content=f"<{self.config_name}> 任务连续失败三次，请上线查看"
+                )
+                # 关闭模拟器
+                self.device.emulator_stop()
                 exit(1)
 
             if success:

@@ -41,9 +41,9 @@ class RestartAssets:
 	I_HARVEST_SIGN_4 = RuleImage(roi_front=(587,151,100,228), roi_back=(547,123,185,281), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_sign_4.png")
 	# 点击随机御魂 
 	I_HARVEST_SOUL_1 = RuleImage(roi_front=(248,501,34,37), roi_back=(165,389,929,168), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_soul_1.png")
-	# 选择第一个御魂 
+	# 选择中间第二个御魂 
 	I_HARVEST_SOUL_2 = RuleImage(roi_front=(586,561,112,47), roi_back=(570,547,139,71), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_soul_2.png")
-	# description 
+	# 六星御魂标志 
 	I_HARVEST_SOUL_3 = RuleImage(roi_front=(313,489,188,33), roi_back=(302,472,216,60), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_soul_3.png")
 	# 寮包 
 	I_HARVEST_GUILD_REWARD = RuleImage(roi_front=(244,498,41,42), roi_back=(200,403,817,157), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_guild_reward.png")
@@ -53,6 +53,8 @@ class RestartAssets:
 	I_HARVEST_ZIDU = RuleImage(roi_front=(785,475,135,135), roi_back=(785,475,135,135), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_zidu.png")
 	# description 
 	I_HARVEST_MAIL_COPY = RuleImage(roi_front=(257,509,29,21), roi_back=(192,472,790,100), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_mail_copy.png")
+	# description 
+	I_HARVEST_MAIL_2 = RuleImage(roi_front=(156,125,65,60), roi_back=(120,94,290,536), threshold=0.8, method="Template matching", file="./tasks/Restart/harvest/harvest_harvest_mail_2.png")
 
 
 	# Click Rule Assets
@@ -89,6 +91,10 @@ class RestartAssets:
 	I_CHARACTARS = RuleImage(roi_front=(246,535,100,31), roi_back=(219,523,173,57), threshold=0.8, method="Template matching", file="./tasks/Restart/login/login_charactars.png")
 	# description 
 	I_CREATE_ACCOUNT = RuleImage(roi_front=(555,636,169,52), roi_back=(504,614,263,100), threshold=0.8, method="Template matching", file="./tasks/Restart/login/login_create_account.png")
+	# 进入体验服过快出现弹窗 
+	I_EARLY_SERVER = RuleImage(roi_front=(596,269,115,33), roi_back=(596,269,115,33), threshold=0.8, method="Template matching", file="./tasks/Restart/login/login_early_server.png")
+	# 取消体验服切换弹窗 
+	I_EARLY_SERVER_CANCEL = RuleImage(roi_front=(435,404,172,56), roi_back=(435,404,172,56), threshold=0.8, method="Template matching", file="./tasks/Restart/login/login_early_server_cancel.png")
 
 
 	# Ocr Rule Assets

@@ -8,7 +8,10 @@ from datetime import timedelta, datetime
 from module.base.timer import Timer
 from module.atom.image_grid import ImageGrid
 from module.logger import logger
-from module.exception import TaskEnd
+
+from module.exception import TaskEnd, GameStuckError
+from ppocronnx.predict_system import BoxedResult
+
 
 from tasks.GameUi.game_ui import GameUi
 from tasks.Utils.config_enum import ShikigamiClass
@@ -66,18 +69,25 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             )
         raise TaskEnd
 
-
-
-
-
-    def check_guild_ap_or_assets(self, ap_enable: bool=True, assets_enable: bool=True) -> bool:
+    def check_guild_ap_or_assets(self, ap_enable: bool = True, assets_enable: bool = True) -> bool:
         """
         在寮的主界面 检查是否有收取体力或者是收取寮资金
         如果有就顺带收取
         :return:
         """
         if ap_enable or assets_enable:
-            self.screenshot()
+            # 尝试移动寻找体力或资金
+            try_find_ap = 0
+            while try_find_ap < 3:
+                self.screenshot()
+                try_find_ap += 1
+                if self.appear(self.I_GUILD_AP) or self.appear(self.I_GUILD_ASSETS):
+                    logger.info('Find ap or assets')
+                    break
+                else:
+                    logger.info('Try find ap or assets')
+                    self.swipe(self.S_GUILD_FIND_AP)
+            # 如果未找到则返回False
             if not self.appear(self.I_GUILD_AP) and not self.appear(self.I_GUILD_ASSETS):
                 logger.info('No ap or assets to collect')
                 return False
@@ -128,7 +138,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             if self.appear_then_click(self.I_GUILD_REALM, interval=1):
                 continue
 
-    def check_box_ap_or_exp(self, ap_enable: bool=True, exp_enable: bool=True, exp_waste: bool=True) -> bool:
+    def check_box_ap_or_exp(self, ap_enable: bool = True, exp_enable: bool = True, exp_waste: bool = True) -> bool:
         """
         顺路检查盒子
         :param ap_enable:
@@ -147,7 +157,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
                     continue
 
         # 先是体力盒子
-        def _check_ap_box(appear: bool=False):
+        def _check_ap_box(appear: bool = False):
             if not appear:
                 return False
             # 点击盒子
@@ -177,7 +187,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             _exit_to_realm()
 
         # 经验盒子
-        def _check_exp_box(appear: bool=False):
+        def _check_exp_box(appear: bool = False):
             if not appear:
                 logger.info('No exp box')
                 return False
@@ -384,6 +394,28 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             # while 1:
             #     self.screenshot()
             return card_class
+        def select_friend(friend_name: str) -> bool:
+            """
+            尝试在当前界面中识别并选择指定名称的好友
+            :param friend_name: 要选择的好友名称
+            :return: 成功选择返回True
+            """
+            logger.info(f"尝试选择好友: {friend_name}")
+            original_filter = self.O_UTILIZE_F_LIST.filter
+            try:
+                # 替换为自定义filter
+                self.O_UTILIZE_F_LIST.filter = self.filter
+                while 1:
+                    self.screenshot()
+                    self.O_UTILIZE_F_LIST.keyword = friend_name
+                    if self.ocr_appear_click(self.O_UTILIZE_F_LIST):
+                        logger.info(f"成功选择好友: {friend_name}")
+                        return True
+                    else:
+                        return False
+            finally:
+                # 恢复原始filter方法，防止副作用
+                self.O_UTILIZE_F_LIST.filter = original_filter
 
         logger.hr('Start utilize')
         self.switch_friend_list(friend)
@@ -394,28 +426,49 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
         else:
             self.switch_friend_list(SelectFriendList.SAME_SERVER)
             self.switch_friend_list(SelectFriendList.DIFFERENT_SERVER)
-        card_best = None
-        swipe_count = 0
-        while 1:
-            self.screenshot()
-            current_card = _current_select_best(card_best)
 
-            if current_card is None:
-                break
-            else:
-                card_best = current_card
+        rule = self.config.kekkai_utilize.utilize_config.utilize_rule
+        friend_name = self.config.kekkai_utilize.utilize_config.utilize_friend
+        if rule == UtilizeRule.FRIEND:
+            swipe_count = 0
+            while 1:
+                self.screenshot()
+                if select_friend(friend_name):
+                    break
 
-            # 超过十次就退出
-            if swipe_count > 10:
-                logger.warning('Swipe count is more than 10')
-                break
+                # 超过十次就退出
+                if swipe_count > 10:
+                    logger.warning('Swipe count is more than 10')
+                    break
 
-            # 一直向下滑动
-            self.swipe(self.S_U_UP, interval=0.9)
-            swipe_count += 1
-            time.sleep(3)
-        # 最好的结界卡
-        logger.info('End best card is %s', card_best)
+                # 一直向下滑动
+                self.swipe(self.S_U_UP, interval=0.9)
+                swipe_count += 1
+                time.sleep(3)
+
+        else:
+            card_best = None
+            swipe_count = 0
+            while 1:
+                self.screenshot()
+                current_card = _current_select_best(card_best)
+
+                if current_card is None:
+                    break
+                else:
+                    card_best = current_card
+
+                # 超过十次就退出
+                if swipe_count > 10:
+                    logger.warning('Swipe count is more than 10')
+                    break
+
+                # 一直向下滑动
+                self.swipe(self.S_U_UP, interval=0.9)
+                swipe_count += 1
+                time.sleep(3)
+            # 最好的结界卡
+            logger.info('End best card is %s', card_best)
 
         # 进入结界
         self.screenshot()
@@ -424,7 +477,13 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             # 可能是滑动的时候出错
             logger.warning('The best reason is that the swipe is wrong')
             return False
+        TIMEOUT_SEC = 120          # 超时时长（秒）
+        start_time = time.time()   # 记录起始时间
         while 1:
+            # ——1. 先做超时检查——
+            if time.time() - start_time > TIMEOUT_SEC:
+                logger.error('寄养等待超过 2 分钟，自动退出')
+                raise GameStuckError('寄养超时（>120 s）')
             self.screenshot()
             if self.appear(self.I_CHECK_FRIEND_REALM_1):
                 self.wait_until_stable(self.I_CHECK_FRIEND_REALM_1)
@@ -461,6 +520,49 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
         self.set_shikigami(shikigami_order, stop_image)
         return True
 
+    def filter(self, boxed_results: list[BoxedResult], keyword: str=None) -> list or None:
+        """
+        使用ocr获取结果后和keyword进行匹配. 返回匹配的index list
+        :param keyword: 如果不指定默认适用对象的keyword
+        :param boxed_results:
+        :return:
+        """
+        # 首先先将所有的ocr的str顺序拼接起来, 然后再进行匹配
+        logger.info(f"重写的filter方法")
+        result = None
+        strings = [boxed_result.ocr_text for boxed_result in boxed_results]
+        concatenated_string = "".join(strings)
+        if keyword is None:
+            keyword = self.keyword
+        if keyword in concatenated_string:
+            result = [index for index, word in enumerate(strings) if keyword in word]
+        else:
+            result = None
+
+        if result is not None:
+            # logger.info("Filter result: %s" % result)
+            return result
+        else:
+            return None
+
+        # 如果适用顺序拼接还是没有匹配到，那可能是竖排的，使用单个字节的keyword进行匹配
+        indices = []
+        # 对于keyword中的每一个字符，都要在strings中进行匹配
+        # 如果这个字符在strings中的某一个string中，那么就记录这个string的index
+        max_index = len(strings) - 1
+        for index, char in enumerate(keyword):
+            for i, string in enumerate(strings):
+                if char not in string:
+                    continue
+                if i <= max_index:
+                    indices.append(i)
+                    break
+        if indices:
+            # 剔除掉重复的index
+            indices = list(set(indices))
+            return indices
+        else:
+            return None
 
     def back_guild(self):
         """
@@ -480,6 +582,7 @@ class ScriptTask(GameUi, ReplaceShikigami, KekkaiUtilizeAssets):
             if self.appear_then_click(self.I_UI_BACK_BLUE, interval=1):
                 continue
 
+
 if __name__ == "__main__":
     from module.config.config import Config
     from module.device.device import Device
@@ -492,5 +595,3 @@ if __name__ == "__main__":
     # t.screenshot()
     # print(t.appear(t.I_BOX_EXP, threshold=0.6))
     # print(t.appear(t.I_BOX_EXP_MAX, threshold=0.6))
-
-

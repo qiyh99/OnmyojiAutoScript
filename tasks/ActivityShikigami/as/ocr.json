@@ -1,8 +1,8 @@
 [
   {
     "itemName": "remain_ap",
-    "roiFront": "131,572,42,25",
-    "roiBack": "131,572,42,25",
+    "roiFront": "910,18,62,28",
+    "roiBack": "910,18,62,28",
     "mode": "DigitCounter",
     "method": "Default",
     "keyword": "",
@@ -10,8 +10,8 @@
   },
   {
     "itemName": "remain_ap_activity",
-    "roiFront": "715,18,95,28",
-    "roiBack": "715,18,95,28",
+    "roiFront": "534,18,70,28",
+    "roiBack": "534,18,70,28",
     "mode": "DigitCounter",
     "method": "Default",
     "keyword": "",
@@ -28,11 +28,20 @@
   },
   {
     "itemName": "remain_ap_activity2",
-    "roiFront": "756,17,52,29",
-    "roiBack": "756,17,52,29",
+    "roiFront": "558,18,47,29",
+    "roiBack": "558,18,47,29",
     "mode": "Digit",
     "method": "Default",
     "keyword": "",
     "description": "活动票数（没有百分比）"
+  },
+  {
+    "itemName": "entry_activity",
+    "roiFront": "70,103,98,32",
+    "roiBack": "70,103,98,32",
+    "mode": "Single",
+    "method": "Default",
+    "keyword": "驻守平安",
+    "description": "从左侧进入战斗"
   }
 ]
