@@ -48,6 +48,7 @@ class BaseCor:
 
     lang: str = "ch"
     score: float = 0.6  # 阈值默认为0.5
+    min_score: float = 0.3  # 宽松阈值，用于挽救数字等结果
 
     name: str = "ocr"
     mode: OcrMode = OcrMode.FULL
@@ -85,6 +86,12 @@ class BaseCor:
         self.roi: list = list(roi)
         self.area: list = list(area)
         self.keyword = keyword
+
+    def __str__(self):
+        return f"{self.name}"
+
+    def __repr__(self):
+        return f"{self.name}"
 
     @cached_property
     def model(self) -> TextSystem:
@@ -150,7 +157,16 @@ class BaseCor:
         image = self.pre_process(image)
         # ocr
         result, score = self.model.ocr_single_line(image)
-        if score < self.score:
+        contains_digit = any(char.isdigit() for char in result)
+
+        if score >= self.score:
+            pass
+        elif score >= self.min_score and contains_digit and self.mode in [OcrMode.DIGIT, OcrMode.DIGITCOUNTER,
+                                                                          OcrMode.QUANTITY]:
+            logger.warning(
+                f'[{self.name}] Score {score:.2f} is low, but result "{result}" contains a digit. Accepting it.')
+            print(f'能保留')
+        else:
             result = ""
         # after proces
         result = self.after_process(result)
@@ -159,7 +175,7 @@ class BaseCor:
                     text=f'[{result}]')
         return result
 
-    def detect_and_ocr(self, image) -> list[BoxedResult]:
+    def detect_and_ocr(self, image, logDisplay: bool = True) -> list[BoxedResult]:
         """
         注意：这里使用了预处理和后处理
         :param image:
@@ -181,9 +197,9 @@ class BaseCor:
                 continue
             result.ocr_text = self.after_process(result.ocr_text)
             results.append(result)
-
-        logger.attr(name='%s %ss' % (self.name, float2str(time.time() - start_time)),
-                    text=str([result.ocr_text for result in results]))
+        if logDisplay:
+            logger.attr(name='%s %ss' % (self.name, float2str(time.time() - start_time)),
+                        text=str([result.ocr_text for result in results]))
         return results
 
     def match(self, result: str, included: bool=False) -> bool:

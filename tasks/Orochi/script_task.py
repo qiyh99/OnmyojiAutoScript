@@ -314,7 +314,7 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
             self.screenshot()
             if not self.appear(self.I_FORM_TEAM):
                 break
-            if self.appear_then_click(self.I_BACK_BL, interval=1):
+            if self.appear_then_click(self.I_UI_BACK_YELLOW, interval=1):
                 continue
 
         self.ui_current = page_soul_zones
@@ -489,6 +489,8 @@ class ScriptTask(GeneralBattle, GeneralInvite, GeneralBuff, GeneralRoom, GameUi,
                 group_team = orochi_switch_soul.eleven_switch
             case Layer.TWELVE:
                 group_team = orochi_switch_soul.twelve_switch
+            case Layer.THIRTEEN:
+                group_team = orochi_switch_soul.thirteen_switch
 
         if orochi_switch_soul.auto_switch_soul:
             self.ui_get_current_page()

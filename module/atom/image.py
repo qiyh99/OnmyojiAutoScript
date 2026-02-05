@@ -7,11 +7,14 @@ import numpy as np
 from numpy import float32, int32, uint8, fromfile
 from pathlib import Path
 
+from module.atom.RuleImageMallResourceMixin import RuleImageMallResourceMixin
 from module.base.decorator import cached_property
 from module.logger import logger
 from module.base.utils import is_approx_rectangle
 
-class RuleImage:
+
+class RuleImage(RuleImageMallResourceMixin):
+    debug_mode: bool = False
 
     def __init__(self, roi_front: tuple, roi_back: tuple, method: str, threshold: float, file: str) -> None:
         """
@@ -156,7 +159,8 @@ class RuleImage:
 
         res = cv2.matchTemplate(source, mat, cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)  # 最小匹配度，最大匹配度，最小匹配度的坐标，最大匹配度的坐标
-        # logger.attr(self.name, max_val)
+        if self.debug_mode:
+            logger.attr(self.name, f'matching score {max_val:.5f}')
 
         if max_val > threshold:
             self.roi_front[0] = max_loc[0] + self.roi_back[0]
@@ -192,6 +196,39 @@ class RuleImage:
             matches.append((score, x, y, mat.shape[1], mat.shape[0]))
         return matches
 
+    def match_all_any(self, image: np.array, threshold: float = None, roi: list = None, nms_threshold: float = 0.3) -> list[tuple]:
+        """
+        区别于match，这个是返回所有的匹配结果，去除冗余匹配项（例如：多个框选区域重叠的情况）时使用。
+        :param roi:
+        :param image:
+        :param threshold:
+        :return:
+        """
+        if roi is not None:
+            self.roi_back = roi
+        if threshold is None:
+            threshold = self.threshold
+        if not self.is_template_match:
+            raise Exception(f"unknown method {self.method}")
+        source = self.corp(image)
+        mat = self.image
+        results = cv2.matchTemplate(source, mat, cv2.TM_CCOEFF_NORMED)
+        locations = np.where(results >= threshold)
+        matches = []
+        for pt in zip(*locations[::-1]):  # (x, y) coordinates
+            score = results[pt[1], pt[0]]
+            # 得分, x, y, w, h
+            x = self.roi_back[0] + pt[0]
+            y = self.roi_back[1] + pt[1]
+            matches.append((score, x, y, mat.shape[1], mat.shape[0]))
+        if len(matches) > 0:
+            scores = np.array([m[0] for m in matches])
+            boxes = np.array([[m[1], m[2], m[3], m[4]] for m in matches])
+            # 使用OpenCV的NMSBoxes
+            indices = cv2.dnn.NMSBoxes(boxes.tolist(), scores.tolist(), score_threshold=threshold, nms_threshold=nms_threshold)
+            filtered_matches = [matches[i] for i in indices]
+            return filtered_matches
+        return matches
 
     def coord(self) -> tuple:
         """
@@ -218,6 +255,7 @@ class RuleImage:
         return int(x + w//2), int(y + h//2)
 
     def test_match(self, image: np.array):
+        self.debug_mode = True
         if self.is_template_match:
             return self.match(image)
         if self.is_sift_flann:
@@ -305,7 +343,6 @@ class RuleImage:
             if abs(average_color[i] - color[i]) > bias:
                 return False
         return True
-
 
 if __name__ == "__main__":
     from dev_tools.assets_test import detect_image

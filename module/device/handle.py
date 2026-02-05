@@ -257,6 +257,11 @@ class Handle:
         # 事实上 我们只需要最后一个 'MuMu模拟器12'，其他的不重要
         if 'MuMu模拟器12' in emu_list and 'MuMuPlayer' in emu_list:
             emulator_title = 'MuMu模拟器12'
+        
+        # MuMu5.0更新，窗体标题改动: 'MuMu模拟器','MuMuNxDevice','MuMu安卓设备'
+        # 如果没有匹配上旧版本，尝试匹配MuMu5.0窗口名                                                                  
+        if emulator_title == '' and 'MuMu安卓设备' in emu_list:
+            emulator_title = 'MuMu安卓设备'
 
         if len(emu_list) > 1 and emulator_title == '':
             logger.warning(f'Find more than one emulator handle, oas will use the first one {emu_list[0]}')
@@ -301,6 +306,8 @@ class Handle:
             name = self.root_node.children[0].name
             if name == 'MuMuPlayer':
                 return EmulatorFamily.FAMILY_MUMU
+            elif name == 'MuMuNxDevice':
+                return EmulatorFamily.FAMILY_MUMU
             elif name == 'NemuPlayer':
                 return EmulatorFamily.FAMILY_MUMU
             elif name == 'TheRender':
@@ -342,6 +349,9 @@ class Handle:
                 return num
             elif name == 'NemuPlayer':
                 logger.info('The emulator is MuMu模拟器')
+                return num
+            elif name == 'MuMuNxDevice':
+                logger.info('The emulator is MuMu模拟器5.0')
                 return num
         # 夜神
         elif self.emulator_family == EmulatorFamily.FAMILY_NOX:

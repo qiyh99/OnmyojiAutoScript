@@ -159,6 +159,8 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         area_index = 0
         success = True
         while 1:
+            # 设置长任务标志,用来寻找寮突可进攻的目标
+            self.device.stuck_record_add('PREPARE_BEFORE_BATTLE')
             if not self.has_ticket():
                 logger.info("We have no chance to attack. Try again after 1 hour.")
                 success = False
@@ -302,7 +304,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
         click_failure_count = 0
         while True:
             self.screenshot()
-            if click_failure_count >= 3:
+            if click_failure_count >= 5:
                 logger.warning("Click failure, check your click position")
                 return False
             if not self.appear(self.I_TOPPA_RECORD, threshold=0.85):
@@ -317,6 +319,7 @@ class ScriptTask(GeneralBattle, GameUi, SwitchSoul, RyouToppaAssets):
                 click_failure_count += 1
                 continue
             if self.click(rcl, interval=5):
+                click_failure_count += 1
                 continue
 
 

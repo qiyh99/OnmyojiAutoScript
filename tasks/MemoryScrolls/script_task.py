@@ -29,9 +29,20 @@ class ScriptTask(GameUi, MemoryScrollsAssets):
         if self.wait_until_appear(self.I_MS_ENTER, wait_time=30):
             while 1:
                 self.screenshot()
-                if self.appear(self.I_MS_MAIN):
+                if self.appear(self.I_MS_FRAGMENT_S):
                     logger.info('Entered Memory Scrolls main page')
                     break
+                # 周年庆等时期会使用双绘卷
+                if self.appear(self.I_MS_DOUBLE_SCROLLS_ENTER):
+                    logger.info('Using Double Memory Scrolls')
+                    if con.double_scrolls == con.double_scrolls.ONE:
+                        logger.info('Choose Double Memory Scrolls One')
+                    else:
+                        logger.info('Choose Double Memory Scrolls Two')
+                        self.click(self.C_MS_DOUBLE_SCROLLS_2, interval=1)
+                    if self.appear_then_click(self.I_MS_DOUBLE_SCROLLS_ENTER, interval=1):
+                        continue
+                # 右上角绘卷铃铛
                 if self.appear_then_click(self.I_MS_ENTER, interval=1):
                     continue
         else:
@@ -50,7 +61,7 @@ class ScriptTask(GameUi, MemoryScrollsAssets):
                 logger.info('Small Memory Scrolls fragments reached 50, planning tomorrow exploration')
                 # 安排下次探索
                 self.custom_next_run(task='Exploration', custom_time=self.config.memory_scrolls.memory_scrolls_finish.next_exploration_time, time_delta=1)
-            self.ui_click_until_smt_disappear(self.I_MS_MAIN, stop=self.I_MS_FRAGMENT_S_VERIFICATION, interval=1.5)
+            self.ui_click_until_smt_disappear(self.I_MS_FRAGMENT_S, stop=self.I_MS_FRAGMENT_S_VERIFICATION, interval=1.5)
         # 进入指定分卷
         self.goto_scroll(con)
         # 返回召唤界面，目前只发现此种返回按键

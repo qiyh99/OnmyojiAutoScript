@@ -29,12 +29,13 @@ from module.config.utils import convert_to_underscore
 from module.config.config import Config
 from module.config.config_model import ConfigModel
 from module.device.device import Device
+from module.device.env import IS_WINDOWS
 from module.base.utils import load_module
 from module.base.decorator import del_cached_property
 from module.logger import logger
 from module.exception import *
 from module.server.i18n import I18n
-from module.device.platform2.platform_windows import minimize_by_name,show_window_by_name
+
 
 
 _log_switch_lock = threading.Lock()#线程锁
@@ -100,8 +101,11 @@ class Script:
         if self.config.script.error.save_error:
             if not os.path.exists('./log/error'):
                 os.mkdir('./log/error')
-            folder = f'./log/error/{int(time.time() * 1000)}'
+            folder_name = str(int(time.time() * 1000))
+            folder = f'./log/error/{folder_name}'
             logger.warning(f'Saving error: {folder}')
+            logger.info('保存详细错误的日志和截图到路径:')
+            logger.info(f'{str( Path.cwd() / "log" / "error" / folder_name)}')
             os.mkdir(folder)
             for data in self.device.screenshot_deque:
                 image_time = datetime.strftime(data['time'], '%Y-%m-%d_%H-%M-%S-%f')
@@ -269,9 +273,6 @@ class Script:
             result[key] = item
         return json.dumps(result)
 
-
-
-
     def wait_until(self, future):
         """
         Wait until a specific time.
@@ -303,47 +304,71 @@ class Script:
         获取下一个任务的名字, 大驼峰。
         :return:
         """
-        while 1:
+        while True:
             task = self.config.get_next()
             self.config.task = task
             if self.state_queue:
                 self.state_queue.put({"schedule": self.config.get_schedule_data()})
+            now = datetime.now()
+            # 任务时间到了返回任务名称
+            if task.next_run <= now:
+                return task.command
+            # 根据策略执行等待逻辑
+            if not self._handle_wait_during_idle(task.next_run):
+                # 若等待被打断, 则刷新配置
+                del_cached_property(self, "config")
 
-            # from module.base.resource import release_resources
-            # if self.config.task.command != 'Alas':
-            #     release_resources(next_task=task.command)
+    def _handle_wait_during_idle(self, next_run: datetime) -> bool:
+        """
+        处理任务空闲期间的行为策略
+        :param next_run: 下一个任务的时间
+        :return: True 表示等待成功完成, False 表示等待被中断
+        """
+        method = self.config.script.optimization.when_task_queue_empty
+        strategy_map = {
+            "close_game": self._wait_close_game,
+            "goto_main": self._wait_goto_main,
+        }
+        func = strategy_map.get(method)
+        if not func:
+            logger.warning(f"Invalid Optimization_WhenTaskQueueEmpty: {method}, fallback to stay_there")
+            func = self._wait_stay_there
+        return func(next_run)
 
-            if task.next_run > datetime.now():
-                logger.info(f'Wait until {task.next_run} for task `{task.command}`')
-                method = self.config.script.optimization.when_task_queue_empty
-                if method == 'close_game':
-                    logger.info('Close game during wait')
-                    self.device.app_stop()
-                    self.device.release_during_wait()
-                    if not self.wait_until(task.next_run):
-                        del_cached_property(self, 'config')
-                        continue
-                    self.run('Restart')
-                elif method == 'goto_main':
-                    logger.info('Goto main page during wait')
-                    self.run('GotoMain')
-                    self.device.release_during_wait()
-                    if not self.wait_until(task.next_run):
-                        del_cached_property(self, 'config')
-                        continue
-                else:
-                    logger.warning(f'Invalid Optimization_WhenTaskQueueEmpty: {method}, fallback to stay_there')
-                    self.device.release_during_wait()
-                    if not self.wait_until(task.next_run):
-                        del_cached_property(self, 'config')
-                        continue
-            break
+    def _wait_close_game(self, next_run: datetime) -> bool:
+        logger.info("Close game during wait")
+        self.device.app_stop()
+        self.device.release_during_wait()
+        if not self.wait_until(next_run):
+            return False
+        self.run("Restart")
+        return True
 
-        return task.command
+    def _wait_goto_main(self, next_run: datetime) -> bool:
+        logger.info("Goto main page during wait")
+        self.run("GotoMain")
+        self.device.release_during_wait()
+        return self.wait_until(next_run)
+
+    def _wait_stay_there(self, next_run: datetime) -> bool:
+        logger.info("Stay_there (no action) during wait")
+        self.device.release_during_wait()
+        return self.wait_until(next_run)
+
+    def exception_handler(self, e: Exception, command: str) -> None:
+        # 处理御魂溢出
+        from tasks.Utils.post_diagnotor import PostDiagnotor, AnalyzeType
+        image = getattr(self.device, 'image', None)
+        # image为None则不做处理
+        if image is None:
+            return
+        analyse_type = PostDiagnotor().handle(e=e, command=command, image=image)
+        if analyse_type == AnalyzeType.SoulOverflow:
+            self.config.task_call('SoulsTidy')
+            time.sleep(1)
 
     def run(self, command: str) -> bool:
         """
-
         :param command:  大写驼峰命名的任务名字
         :return:
         """
@@ -361,11 +386,13 @@ class Script:
             return True
         except GameNotRunningError as e:
             logger.warning(e)
+            self.exception_handler(e=e, command=command)
             self.config.task_call('Restart')
             return True
         except (GameStuckError, GameTooManyClickError) as e:
             logger.error(e)
             self.save_error_log()
+            self.exception_handler(e=e, command=command)
             logger.warning(f'Game stuck, {self.device.package} will be restarted in 10 seconds')
             logger.warning('If you are playing by hand, please stop Alas')
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GameStuckError or GameTooManyClickError")
@@ -375,32 +402,37 @@ class Script:
         except GameBugError as e:
             logger.warning(e)
             self.save_error_log()
+            self.exception_handler(e=e, command=command)
             logger.warning('An error has occurred in Azur Lane game client, Alas is unable to handle')
             logger.warning(f'Restarting {self.device.package} to fix it')
             self.config.task_call('Restart')
             self.device.sleep(10)
             return False
-        except GamePageUnknownError:
+        except GamePageUnknownError as e:
             logger.info('Game server may be under maintenance or network may be broken, check server status now')
             # 这个还不重要 留着坑填
             logger.critical('Game page unknown')
             self.save_error_log()
+            self.exception_handler(e=e, command=command)
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> GamePageUnknownError")
             self.config.task_call('Restart')
             self.device.sleep(10)
             return False
         except ScriptError as e:
             logger.critical(e)
+            self.exception_handler(e=e, command=command)
             logger.critical('This is likely to be a mistake of developers, but sometimes just random issues')
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> ScriptError")
             exit(1)
         except RequestHumanTakeover as e:
             logger.critical(e)
+            self.exception_handler(e=e, command=command)
             logger.critical('Request human takeover')
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> RequestHumanTakeover")
             exit(1)
         except Exception as e:
             logger.exception(e)
+            self.exception_handler(e=e, command=command)
             self.save_error_log()
             self.config.notifier.push(title=f'{I18n.trans_zh_cn(command)}{command}', content=f"<{self.config_name}> Exception occured")
             exit(1)
@@ -414,9 +446,11 @@ class Script:
             logger.set_file_logger(self.config_name, do_cleanup=True)
         start_day = date.today()
         logger.info(f'Start scheduler loop: {self.config_name}')
+        self.config.model.running_task = ''
 
         # Update GUI 防呆, 读取设置并立刻显示后台模拟器到前台
-        if not self.config.script.device.run_background_only:
+        if not self.config.script.device.run_background_only and IS_WINDOWS:
+            from module.device.platform2.platform_windows import minimize_by_name, show_window_by_name
             target_window_name = self.config.script.device.handle  # 在这里输入你的具体窗口名称
             if self.config.script.device.emulator_window_minimize:
                 minimize_by_name(target_window_name)
@@ -449,8 +483,6 @@ class Script:
 
             # Get task
             task = self.get_next_task()
-            # 更新 gui的任务
-            # Init device and change server
             _ = self.device
             # Skip first restart
             if self.is_first_task and task == 'Restart':
@@ -460,13 +492,13 @@ class Script:
                 continue
 
             # Run
-            if self.state_queue:
-                self.state_queue.put({"schedule": self.config.get_schedule_data()})
             logger.info(f'Scheduler: Start task `{task}`')
             self.device.stuck_record_clear()
             self.device.click_record_clear()
             logger.hr(task, level=0)
+            self.config.model.running_task = task
             success = self.run(inflection.camelize(task))
+            self.config.model.running_task = ''
             logger.info(f'Scheduler: End task `{task}`')
             self.is_first_task = False
 
@@ -489,7 +521,8 @@ class Script:
                     content=f"<{self.config_name}> 任务连续失败三次，请上线查看"
                 )
                 # 关闭模拟器
-                self.device.emulator_stop()
+                if self.config.script.error.error_repeated:
+                    self.device.emulator_stop()
                 exit(1)
 
             if success:
@@ -515,5 +548,4 @@ class Script:
 
 if __name__ == "__main__":
     script = Script("oas1")
-    print(script.gui_task_list())
-    print(script.config.gui_menu)
+    script.loop()

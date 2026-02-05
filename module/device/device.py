@@ -22,14 +22,13 @@ from module.exception import (GameNotRunningError,
 from module.logger import logger
 
 
-
 class Device(Platform, Screenshot, Control, AppControl):
     _screen_size_checked = False
     detect_record = set()
     click_record = deque(maxlen=15)
     stuck_timer = Timer(60, count=60).start()
     stuck_timer_long = Timer(300, count=300).start()
-    stuck_long_wait_list = ['BATTLE_STATUS_S', 'PAUSE', 'LOGIN_CHECK']
+    stuck_long_wait_list = ['BATTLE_STATUS_S', 'PAUSE', 'LOGIN_CHECK', 'PREPARE_BEFORE_BATTLE']
 
     def __init__(self, *args, **kwargs):
         for trial in range(4):
@@ -203,8 +202,8 @@ class Device(Platform, Screenshot, Control, AppControl):
         count = {}
         for key in self.click_record:
             count[key] = count.get(key, 0) + 1
-        count = sorted(count.items(), key=lambda item: item[1])
-        if count[0][1] >= 12:
+        count = sorted(count.items(), key=lambda item: item[1], reverse=True)
+        if count[0][1] >= 10:
             logger.warning(f'Too many click for a button: {count[0][0]}')
             logger.warning(f'History click: {[str(prev) for prev in self.click_record]}')
             self.click_record_clear()

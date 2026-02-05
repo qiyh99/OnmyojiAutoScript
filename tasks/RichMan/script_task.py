@@ -34,17 +34,6 @@ class ScriptTask(Mall, Guild, ThousandThings, Shrine):
         raise TaskEnd('RichMan')
 
 
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
     from module.config.config import Config
     from module.device.device import Device
@@ -52,8 +41,8 @@ if __name__ == '__main__':
     d = Device(c)
     t = ScriptTask(c, d)
 
-    t.run()
-    # t.execute_mall()
+    # t.run()
+    t.execute_mall()
 
 
 

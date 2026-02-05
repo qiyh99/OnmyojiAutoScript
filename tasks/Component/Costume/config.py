@@ -18,6 +18,8 @@ class MainType(str, Enum):
     COSTUME_MAIN_9 = 'costume_main_9'  # 结缘神社
     COSTUME_MAIN_10 = 'costume_main_10'  # 望月幽庭
     COSTUME_MAIN_11 = 'costume_main_11'  # 鏖刀禁府
+    COSTUME_MAIN_12 = 'costume_main_12'  # 龙吟溯玉
+    COSTUME_MAIN_13 = 'costume_main_13'  # 云景阆苑
 
 # 结界皮肤
 class RealmType(str, Enum):
@@ -34,6 +36,11 @@ class ThemeType(str, Enum):
 # 幕间，就是式神录这里
 class ShikigamiType(str, Enum):
     COSTUME_SHIKIGAMI_DEFAULT = 'costume_shikigami_default'  # 静栖走廊
+    COSTUME_SHIKIGAMI_1 = 'costume_shikigami_1'  # 妙音空境
+    COSTUME_SHIKIGAMI_2 = 'costume_shikigami_2'  # 缘台樱垂
+    COSTUME_SHIKIGAMI_3 = 'costume_shikigami_3'  # 启程之刻
+    COSTUME_SHIKIGAMI_4 = 'costume_shikigami_4'  # 冥夜游火
+    COSTUME_SHIKIGAMI_5 = 'costume_shikigami_5'  # 契光水境
 
 # 签到主题
 class SignType(str, Enum):
@@ -52,6 +59,7 @@ class BattleType(str, Enum):
     COSTUME_BATTLE_8 = 'costume_battle_8'  # 藏金台阁
     COSTUME_BATTLE_9 = 'costume_battle_9'  # 莲华圣域
     COSTUME_BATTLE_10 = 'costume_battle_10'  # 流焰蝶舞
+    COSTUME_BATTLE_11 = 'costume_battle_11'  # 辰烁奇夜
 
 
 

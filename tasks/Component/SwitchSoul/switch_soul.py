@@ -24,7 +24,7 @@ def switch_parser(switch_str: str) -> tuple:
 
 class SwitchSoul(BaseTask, SwitchSoulAssets):
 
-    def run_switch_soul(self, target: tuple or list[tuple]):
+    def run_switch_soul(self, target: tuple | list[tuple] | str):
         """
         保证在式神录的界面
         :return:
@@ -136,7 +136,8 @@ class SwitchSoul(BaseTask, SwitchSoulAssets):
                 continue
             if not self.appear_then_click(target_team, interval=3):
                 logger.warning(f'Click team {team} failed in group {group}')
-
+        # 兜底若还出现确认按钮则点击
+        self.ui_click_until_disappear(self.I_SOU_SWITCH_SURE)
         logger.info(f'Switch soul_one group {group} team {team}')
 
     def switch_souls(self, target: tuple or list[tuple]) -> None:

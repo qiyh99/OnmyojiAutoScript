@@ -133,11 +133,15 @@ class GeneralBattleAssets:
 	I_GREEN_MARKER_BOTTOM = RuleImage(roi_front=(0,0,1280,720), roi_back=(0,0,1280,720), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_green_marker_bottom.png")
 	# 新版本的预设图案带数字 
 	I_PRESET_WIT_NUMBER = RuleImage(roi_front=(40,655,37,37), roi_back=(9,636,100,74), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_preset_wit_number.png")
+	# 战斗信息标识 
+	I_BATTLE_INFO = RuleImage(roi_front=(230,12,37,39), roi_back=(210,1,147,72), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_battle_info.png")
 
 
 	# Image Rule Assets
 	# description 
 	I_GREED_GHOST = RuleImage(roi_front=(56,40,45,45), roi_back=(56,40,45,45), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_greed_ghost.png")
+	# 确认按钮 
+	I_CONFIRM = RuleImage(roi_front=(732,383,83,43), roi_back=(330,228,615,286), threshold=0.8, method="Template matching", file="./tasks/Component/GeneralBattle/gb/gb_confirm.png")
 
 
 	# Ocr Rule Assets
@@ -145,6 +149,10 @@ class GeneralBattleAssets:
 	O_BATTLE_PREPARE = RuleOcr(roi=(1122,546,92,51), area=(1122,546,92,51), mode="Single", method="Default", keyword="准备", name="battle_prepare")
 	# 预设,部分场景预设按钮上的文字为'预设'+数字,导致点击preset失败 
 	O_PRESET = RuleOcr(roi=(20,620,60,80), area=(20,620,60,80), mode="Single", method="Default", keyword="预", name="preset")
+	# 预设 
+	O_PRESET_FULL = RuleOcr(roi=(20,620,60,80), area=(20,620,60,80), mode="Single", method="Default", keyword="预设", name="preset_full")
+	# 已标记 
+	O_BOSS_MARK = RuleOcr(roi=(379,44,50,21), area=(379,44,50,21), mode="Single", method="Default", keyword="已标记", name="boss_mark")
 
 
 	# Swipe Rule Assets

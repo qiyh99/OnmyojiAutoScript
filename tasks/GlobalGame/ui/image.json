@@ -30,7 +30,7 @@
     "itemName": "ui_back_red",
     "imageName": "ui_ui_back_red.png",
     "roiFront": "1041,111,34,38",
-    "roiBack": "834,15,427,200",
+    "roiBack": "877,15,383,254",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "description"
@@ -65,8 +65,8 @@
   {
     "itemName": "ui_confirm_samll",
     "imageName": "ui_ui_confirm_samll.png",
-    "roiFront": "677,390,130,62",
-    "roiBack": "677,390,130,62",
+    "roiFront": "681,392,130,62",
+    "roiBack": "558,380,265,99",
     "method": "Template matching",
     "threshold": 0.8,
     "description": "短一点的确认"
@@ -97,5 +97,14 @@
     "method": "Template matching",
     "threshold": 0.8,
     "description": "勾选"
+  },
+  {
+    "itemName": "ui_gotit_small",
+    "imageName": "ui_ui_gotit_small.png",
+    "roiFront": "678,396,127,60",
+    "roiBack": "622,371,242,100",
+    "method": "Template matching",
+    "threshold": 0.8,
+    "description": "知道了"
   }
 ]

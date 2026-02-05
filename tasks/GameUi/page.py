@@ -1,18 +1,39 @@
-import traceback
+from itertools import compress
 
+import random
+
+import traceback
+from module.atom.click import RuleClick
+from tasks.GlobalGame.assets import GlobalGameAssets as GGA
 from tasks.GameUi.assets import GameUiAssets as G
+from tasks.KekkaiUtilize.assets import KekkaiUtilizeAssets
+from tasks.Restart.assets import RestartAssets
+from tasks.base_task import BaseTask as BT
 from tasks.RyouToppa.assets import RyouToppaAssets
 
+
+class PageRegistry:
+    _registry = []
+
+    @classmethod
+    def register(cls, page):
+        cls._registry.append(page)
+
+    @classmethod
+    def all(cls):
+        return list(cls._registry)
+
+
 class Page:
-    parent = None
-
-
-    def __init__(self, check_button):
+    def __init__(self, check_button, links=None):
+        if links is None:
+            links = {}
         self.check_button = check_button
-        self.links = {}
+        self.links = links
         self.additional: list = None  # 附加按钮或者是ocr检测按钮
         (filename, line_number, function_name, text) = traceback.extract_stack()[-2]
         self.name = text[:text.find('=')].strip()
+        PageRegistry.register(self)
 
     def __eq__(self, other):
         return self.name == other.name
@@ -28,34 +49,32 @@ class Page:
 
 
 #登录login
-page_login=Page(G.I_CHECK_LOGIN_FORM)
+page_login = Page(G.I_CHECK_LOGIN_FORM)
 # Main Home 主页
 page_main = Page(G.I_CHECK_MAIN)
+page_main.additional = [G.I_AD_CLOSE_RED, G.I_BACK_FRIENDS, RestartAssets.I_CANCEL_BATTLE,
+                        RestartAssets.I_LOGIN_SCROOLL_CLOSE]
 # 召唤summon
 page_summon = Page(G.I_CHECK_SUMMON)
 page_summon.link(button=G.I_SUMMON_GOTO_MAIN, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_SUMMON, destination=page_summon)
 # 探索exploration
 page_exploration = Page(G.I_CHECK_EXPLORATION)
-page_exploration.link(button=G.I_BACK_BLUE, destination=page_main)
+page_exploration.link(button=G.I_BACK_YOLLOW, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_EXPLORATION, destination=page_exploration)
 # 町中town
 page_town = Page(G.I_CHECK_TOWN)
 page_town.link(button=G.I_TOWN_GOTO_MAIN, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_TOWN, destination=page_town)
 
-# Unknown
-# page_unknown = Page(None)
-# page_unknown.link(button=G.I_CHECK_MAIN, destination=page_main)
-
 # ************************************* 探索部分 *****************************************#
 # 觉醒 awake zones
 page_awake_zones = Page(G.I_CHECK_AWAKE)
-page_awake_zones.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_awake_zones.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_AWAKE_ZONE, destination=page_awake_zones)
 # 御魂 soul zones
 page_soul_zones = Page(G.I_CHECK_SOUL_ZONES)
-page_soul_zones.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_soul_zones.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_SOUL_ZONE, destination=page_soul_zones)
 # 结界突破 realm raid
 page_realm_raid = Page(G.I_CHECK_REALM_RAID)
@@ -68,19 +87,19 @@ page_realm_raid.link(button=RyouToppaAssets.I_RYOU_TOPPA, destination=page_kekka
 page_kekkai_toppa.link(button=G.I_RYOUTOPPA_GOTO_REALMRAID, destination=page_realm_raid)
 # 御灵 goryou realm
 page_goryou_realm = Page(G.I_CHECK_GORYOU)
-page_goryou_realm.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_goryou_realm.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_GORYOU_REALM, destination=page_goryou_realm)
 # 委派 delegation
 page_delegation = Page(G.I_CHECK_DELEGATION)
-page_delegation.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_delegation.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_DELEGATION, destination=page_delegation)
 # 秘闻副本 SECRET zones
 page_secret_zones = Page(G.I_CHECK_SECRET_ZONES)
-page_secret_zones.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_secret_zones.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_SECRET_ZONES, destination=page_secret_zones)
 # 地域鬼王 area boss
 page_area_boss = Page(G.I_CHECK_AREA_BOSS)
-page_area_boss.link(button=G.I_BACK_BLUE, destination=page_exploration)
+page_area_boss.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_AREA_BOSS, destination=page_area_boss)
 # 平安奇谭 heian kitan
 page_heian_kitan = Page(G.I_CHECK_HEIAN_KITAN)
@@ -94,6 +113,10 @@ page_exploration.link(button=G.I_EXPLORATION_GOTO_SIX_GATES, destination=page_si
 page_bondling_fairyland = Page(G.I_CHECK_BONDLING_FAIRYLAND)
 page_bondling_fairyland.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
 page_exploration.link(button=G.I_EXPLORATION_GOTO_BONDLING_FAIRYLAND, destination=page_bondling_fairyland)
+# 英杰试炼 hero test
+page_hero_test = Page(G.I_CHECK_HERO_TEST)
+page_hero_test.link(button=G.I_BACK_YOLLOW, destination=page_exploration)
+page_exploration.link(button=G.I_EXPLORATION_GOTO_HERO_TEST, destination=page_hero_test)
 
 # ************************************* 町中部分 *****************************************#
 # 斗技 duel
@@ -106,8 +129,12 @@ page_demon_encounter.link(button=G.I_DEMON_ENCOUNTER_GOTO_TOWN, destination=page
 page_town.link(button=G.I_TOWN_GOTO_DEMON_ENCOUNTER, destination=page_demon_encounter)
 # 狩猎战 hunt
 page_hunt = Page(G.I_CHECK_HUNT)
-page_hunt.link(button=G.I_BACK_BL, destination=page_town)
+page_hunt.link(button=G.I_BACK_YOLLOW, destination=page_town)
 page_town.link(button=G.I_TOWN_GOTO_HUNT, destination=page_hunt)
+# 狩猎战麒麟 hunt_kirin
+page_hunt_kirin = Page(G.I_CHECK_HUNT_KIRIN)
+page_hunt_kirin.link(button=G.I_BACK_YOLLOW, destination=page_town)
+page_town.link(button=G.I_TOWN_GOTO_HUNT, destination=page_hunt_kirin)
 # 协同斗技 draft_duel
 page_draft_duel = Page(G.I_CHECK_DRAFT_DUEL)
 page_draft_duel.link(button=G.I_BACK_YOLLOW, destination=page_town)
@@ -120,7 +147,6 @@ page_town.link(button=G.I_TOWN_GOTO_HYAKKISEN, destination=page_hyakkisen)
 page_hyakkiyakou = Page(G.I_CHECK_KYAKKIYAKOU)
 page_hyakkiyakou.link(button=G.I_HYAKKIYAKOU_CLOSE, destination=page_town)
 page_town.link(button=G.I_TOWN_GOTO_HYAKKIYAKOU, destination=page_hyakkiyakou)
-
 
 # ************************************* 庭院部分 *****************************************#
 # 式神录 shikigami_records
@@ -141,13 +167,16 @@ page_daily = Page(G.I_CHECK_DAILY)
 # page_daily.additional = [G.O_CLICK_CLOSE_1, G.O_CLICK_CLOSE_2]
 page_daily.link(button=G.I_BACK_Y, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_DAILY, destination=page_daily)
+from tasks.DailyTrifles.assets import DailyTriflesAssets
+
 # 商店 mall
-page_mall = Page(G.I_CHECK_MALL)
+page_mall = Page(check_button=[G.I_CHECK_MALL, DailyTriflesAssets.I_ROOM_GIFT])
 page_mall.additional = [G.I_AD_CLOSE_RED, G.I_BACK_Y, G.I_DLC_CLOSE]
-page_mall.link(button=G.I_BACK_BLUE, destination=page_main)
+page_mall.link(button=G.I_BACK_YOLLOW, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_MALL, destination=page_mall)
 # 阴阳寮 guild
 page_guild = Page(G.I_CHECK_GUILD)
+page_guild.additional = [KekkaiUtilizeAssets.I_PLANT_TREE_CLOSE]
 page_guild.link(button=G.I_BACK_Y, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_GUILD, destination=page_guild)
 # 组队 team
@@ -163,15 +192,41 @@ page_travel = Page(G.I_CHECK_TRAVEL)
 page_travel.link(button=G.I_BACK_Y, destination=page_main)
 page_main.link(button=G.I_MAIN_GOTO_TRAVEL, destination=page_travel)
 
-
 # 道馆
 from tasks.Component.GeneralBattle.assets import GeneralBattleAssets
 from tasks.Dokan.assets import DokanAssets
+
 page_dokan = Page(DokanAssets.I_RYOU_DOKAN_CHECK)
 page_dokan.additional = [GeneralBattleAssets.I_EXIT, DokanAssets.I_RYOU_DOKAN_EXIT_ENSURE, G.I_BACK_BLUE]
 page_dokan.link(button=G.I_BACK_Y, destination=page_main)
 
 
-
-
-
+# ************************************* 战斗部分 *****************************************#
+# 战斗界面
+# page_battle = Page(GeneralBattleAssets.I_BATTLE_INFO)
+#
+#
+def random_click(low: int = None, high: int = None, ltrb: tuple = (True, False, True, False)) -> RuleClick | list[RuleClick]:
+    """
+    随机生成RuleClick, 不传入参数则返回1个RuleClick, 传入参数则生成范围内的click数组
+    :return: RuleClick或者RuleClick的数组
+    """
+    from tasks.Component.GeneralBattle.assets import GeneralBattleAssets as GBA
+    click_area_list = [GBA.C_REWARD_1, GBA.C_REWARD_2, GBA.C_REWARD_3]
+    click = random.choice(list(compress(click_area_list, ltrb)))
+    click.name = "SAFE_RANDOM_CLICK"
+    if low is None or high is None:
+        return click
+    return [click for _ in range(random.randint(low, high))]
+#
+#
+# # 奖励界面
+# page_reward = Page(check_button=[GeneralBattleAssets.I_REWARD_PURPLE_SNAKE_SKIN, GeneralBattleAssets.I_REWARD,
+#                                  GeneralBattleAssets.I_REWARD_EXP_SOUL_4, GeneralBattleAssets.I_WIN,
+#                                  GeneralBattleAssets.I_REWARD_GOLD, GeneralBattleAssets.I_REWARD_GOLD_SNAKE_SKIN,
+#                                  GeneralBattleAssets.I_REWARD_SOUL_5, GeneralBattleAssets.I_REWARD_SOUL_6,
+#                                  GGA.I_UI_REWARD, ])
+# page_reward.additional = [random_click()]
+# # 失败界面
+# page_failed = Page(GeneralBattleAssets.I_FALSE)
+# page_failed.additional = [random_click()]
