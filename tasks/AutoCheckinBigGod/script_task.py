@@ -78,19 +78,23 @@ class ScriptTask(BaseTask):
         # [3/5] 获取Token
         logger.info('[3/5] 获取Token...')
         token_data = None
-        for attempt in range(1, 4):
+        for attempt in range(1, 6):
             token_data = self._extract_token(pid)
-            if token_data:
+            if token_data and token_data.get('ROLE_ID') and token_data.get('SERVER'):
                 break
-            if attempt < 3:
-                logger.warning(f'第{attempt}次获取Token失败，等待{10 * attempt}秒后重试...')
-                time.sleep(10 * attempt)
+            if token_data:
+                logger.warning(f'第{attempt}次获取到Token但缺少角色信息，等待5秒后重试...')
+            else:
+                logger.warning(f'第{attempt}次获取Token失败，等待5秒后重试...')
+            if attempt < 5:
+                time.sleep(5)
                 new_pid = self._get_app_pid()
                 if new_pid:
                     pid = new_pid
                     self.frida_pid = pid
+            token_data = None
         if not token_data:
-            logger.error('无法获取Token，请确保已登录大神APP')
+            logger.error('无法获取Token，请确保已登录大神APP并绑定阴阳师角色')
             self.set_next_run('AutoCheckinBigGod', success=False, finish=True)
             raise TaskEnd('AutoCheckinBigGod')
 
