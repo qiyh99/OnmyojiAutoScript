@@ -83,7 +83,7 @@ class ScriptTask(GameUi, GeneralBattle, GeneralInvite, SwitchSoul, HuntAssets):
                 return True
         else:
             logger.info('Today is the Netherworld day')
-            if now.time() < time(19, 0):
+            if now.time() < time(17, 0):
                 self.custom_next_run(task='Hunt', custom_time=self.con_time.netherworld_time, time_delta=0)
                 raise TaskEnd('Hunt')
             # 如果是阴界日在23:00-23:59之间则设定时间为明天的自定义时间，返回False
@@ -108,9 +108,12 @@ class ScriptTask(GameUi, GeneralBattle, GeneralInvite, SwitchSoul, HuntAssets):
             self.screenshot()
             if self.appear(self.I_PREPARE_HIGHLIGHT):
                 break
-            if self.appear_then_click(self.I_UI_CONFIRM, interval=0.9):
+            if self.appear_then_click(self.I_UI_CONFIRM, interval=0.9)\
+                    or self.appear_then_click(self.I_UI_CONFIRM_SAMLL, interval=0.9):
                 continue
             if self.appear_then_click(self.I_KIRIN_CHALLAGE, interval=1.5):
+                continue
+            if self.appear_then_click(self.I_KIRIN_START_CHALLAGE, interval=2.5):
                 continue
             if self.appear(self.I_KIRIN_END):
                 # 今日已挑战

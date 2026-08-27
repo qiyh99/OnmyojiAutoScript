@@ -281,6 +281,7 @@ class GameUi(BaseTask, GameUiAssets):
                 continue
             # 跳转页面
             max_wait_timer = Timer(6).start()
+            logger.info(f'Wait appear and operate {button} on {current_page}')
             while not max_wait_timer.reached():
                 if timeout_timer.reached():
                     return False
@@ -291,9 +292,8 @@ class GameUi(BaseTask, GameUiAssets):
                         break
                 if self.appear_then_operate(button, interval=0.8, skip_first_screenshot=False):
                     break
-                logger.warning(f"[{max_wait_timer.current():.1f}s]Failed click {button} on {current_page}, retry...")
-                sleep(0.8)
             else:
+                logger.warning(f'Failed recognize {button} on {current_page}')
                 self.ui_get_current_page(skip_first_screenshot=False)
                 # 当前页面不是对应路径的页面, 则尝试下一个页面
                 if self.ui_current != current_page:
@@ -316,8 +316,16 @@ class GameUi(BaseTask, GameUiAssets):
         if not page.additional:
             return
         for btn in page.additional:
+            # 支持反向条件操作: [条件元素, 操作元素, True]。不出现条件图片时点击另一个区域。
+            if isinstance(btn, list) and len(btn) == 3 and btn[2] is True:
+                condition, action, invert = btn
+                self.maybe_screenshot(skip_first_screenshot)
+                if not self.appear(condition):
+                    if self.appear_then_operate(action, interval=interval, skip_first_screenshot=False):
+                        logger.info(f'Page {page} additional invert conditional not {condition} -> {action} executed')
+                        skip_first_screenshot = False
             # 支持复合条件操作: [条件元素, 操作元素]。出现条件图片时点击另一个区域。
-            if isinstance(btn, list) and len(btn) == 2:
+            elif isinstance(btn, list) and len(btn) == 2:
                 condition, action = btn
                 self.maybe_screenshot(skip_first_screenshot)
                 if self.appear(condition):
@@ -353,9 +361,13 @@ class GameUi(BaseTask, GameUiAssets):
 if __name__ == '__main__':
     from module.config.config import Config
     from module.device.device import Device
+    from tasks.GameUi.page import page_guild
 
-    c = Config('oas2')
+    c = Config('oas1')
     d = Device(c)
     game = GameUi(config=c, device=d)
-    game.ui_get_current_page()
-    game.ui_goto(page_main)
+    for i in range(10):
+        game.ui_get_current_page()
+        game.ui_goto(page_guild)
+        game.ui_get_current_page()
+        game.ui_goto(page_main)

@@ -7,10 +7,11 @@ from module.exception import RequestHumanTakeover, GameTooManyClickError, GameSt
 from module.logger import logger
 from tasks.Restart.assets import RestartAssets
 from tasks.GameUi.assets import GameUiAssets
+from tasks.Component.GeneralBuff.assets import GeneralBuffAssets
 from tasks.base_task import BaseTask
 import time
 
-class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
+class LoginHandler(BaseTask, RestartAssets, GameUiAssets, GeneralBuffAssets):
     character: str
 
     def __init__(self, *wargs, **kwargs):
@@ -43,29 +44,22 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
             if self.appear_then_click(self.I_CANCEL_BATTLE, interval=0.8):
                 logger.info('Cancel continue battle')
                 continue
-            # 确认进入庭院(优化：当出现闲庭图片时，点击卷轴关闭区域，然后判断式神录按钮出现就代表登录成功)
-            if self.appear(self.I_LOGIN_COURTYARD, interval=0.2):
-                if self.click(self.C_LOGIN_SCROLL_CLOSE_AREA, interval=2):
-                    logger.info('Click scroll close area because courtyard appears')
-                    self.screenshot()  # 点击后立即获取最新截图，确保后续状态检查准确
-                    continue
-            if self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS, interval=0.2):
-                if confirm_timer.reached():
-                    logger.info('Login to main confirm (shikigami records button appears)')
-                    break
-            elif self.appear(self.I_LOGIN_SCROOLL_OPEN, interval=0.2):
-                if confirm_timer.reached():
-                    logger.info('Login to main confirm (scroll open)')
-                    break
-            else:
-                confirm_timer.reset()
-            # 登录成功
-            if self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS, interval=0.5):
-                logger.info('Login success: shikigami records button appears')
-                login_success = True
-            elif self.appear(self.I_LOGIN_SCROOLL_OPEN, interval=0.5):
-                logger.info('Login success: scroll open')
-                login_success = True
+            # 确认进入庭院(优化：先检测加成图标确认在庭院页面，再检测式神录图标)
+            if self.appear(self.I_BUFF_1, interval=0.2):
+                # 加成图标存在，确认在庭院页面
+                if self.appear(self.I_MAIN_GOTO_SHIKIGAMI_RECORDS, interval=0.2):
+                    # 式神录图标存在，认为已在庭院
+                    if confirm_timer.reached():
+                        logger.info('Login to main confirm (buff and shikigami records button appears)')
+                        break
+                    login_success = True
+                else:
+                    # 式神录图标不存在，点击展开卷轴
+                    if self.click(self.C_LOGIN_SCROLL_CLOSE_AREA, interval=2):
+                        logger.info('Click scroll expand area because shikigami records not found')
+                        self.screenshot()
+                        continue
+                    confirm_timer.reset()
 
             # 网络异常
             # if self.ocr_appear(self.O_LOGIN_NETWORK):
@@ -174,6 +168,7 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
         logger.hr('Harvest')
         timer_harvest = Timer(5)  # 如果连续5秒没有发现任何奖励，退出
         skip_default = False
+        courtyard_affairs_done = False  # 庭院事务只执行一次
         while 1:
             self.screenshot()
 
@@ -215,6 +210,12 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
                     logger.info('Close zidu')
                 continue
 
+            # 庭院事务
+            if self.config.restart.harvest_config.enable_courtyard_affairs and not courtyard_affairs_done:
+                self.harvest_courtyard_affairs()
+                timer_harvest.reset()
+                courtyard_affairs_done = True
+                continue
             # 勾玉
             if self.appear_then_click(self.I_HARVEST_JADE, interval=1.5):
                 timer_harvest.reset()
@@ -281,7 +282,7 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
         self.O_LOGIN_SPECIFIC_SERVE.keyword = character
 
     def harvest_mail(self) -> bool:
-        if not self.appear(self.I_HARVEST_MAIL) and \
+        if not self.appear_multi_scale(self.I_HARVEST_MAIL,scale_range=(0.8, 1.1)) and \
                 not self.appear(self.I_HARVEST_MAIL_COPY):
             if not self.appear(self.I_READ_ALL_MAIL):
                 return False
@@ -290,7 +291,7 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
             self.screenshot()
             if self.appear(self.I_READ_ALL_MAIL):
                 break
-            if self.appear_then_click(self.I_HARVEST_MAIL, interval=1.5):
+            if self.appear_then_click_multi_scale(self.I_HARVEST_MAIL, interval=1.5, scale_range=(0.8, 1.1)):
                 continue
             if self.appear_then_click(self.I_HARVEST_MAIL_COPY, interval=1.5):
                 continue
@@ -311,4 +312,45 @@ class LoginHandler(BaseTask, RestartAssets, GameUiAssets):
                 continue
         self.ui_click_until_disappear(self.I_LOGIN_RED_CLOSE)
         return True
+    
+    def harvest_courtyard_affairs(self) -> bool:
+        if not self.ui_click_multi_scale(self.I_NOTE, self.I_PAGE, timeout=3, scale_range=(0.8, 1.2)):
+            logger.warning('courtyard affairs timeout!')
+            return False
+        count_success = 0
+        while 1:
+            self.screenshot()
+            if self.appear(self.I_NO_TASKS):
+                logger.info('courtyard affairs completed！')
+                break
+            # 每日六星御魂
+            if self.appear_then_click(self.I_HARVEST_SOUL_2, interval=1) \
+                    or self.appear_then_click(self.I_HARVEST_SOUL_3, interval=1):
+                continue
+            # 点击'获得奖励'
+            if self.ui_reward_appear_click():
+                continue
+            # 获得奖励
+            if self.appear_then_click(self.I_UI_AWARD, interval=0.2):
+                continue
+            # 式神满级，是否提取物经验？确定
+            if self.appear_then_click(self.I_CONFIRM, interval=1):
+                continue
 
+            if self.appear_then_click(self.I_DAILY, interval=1):
+                continue
+            # 领取成功： 太傻逼了收取结界奖励游戏里面居然没有加上限制
+            if self.appear_then_click(self.I_SUCCESS_CLAIMED, interval=1):
+                continue
+            if self.appear_then_click(self.I_SKIP):# 万花牌跳过
+                continue
+            if self.appear_then_click(self.I_LOGIN_RED_CLOSE, interval=1):# 万花牌X
+                continue
+            # 一键完成
+            if count_success >= 3:
+                logger.info(f'Click complete tasks {count_success} times')
+                break
+            if self.appear_then_click(self.I_COMPLETE_TASKS, interval=2.3):
+                count_success += 1
+                continue
+        return True
